@@ -1,7 +1,6 @@
 package com.yadiqian.mymemory
 
 import android.content.Context
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -69,7 +68,6 @@ class MemoryBoardAdapter(
             ViewCompat.setBackgroundTintList(imageButton, colorStateList)
 
             imageButton.setOnClickListener {
-                Log.i(TAG, "Clicked on position $position")
                 cardClickListener.onCardClicked(position)
             }
         }

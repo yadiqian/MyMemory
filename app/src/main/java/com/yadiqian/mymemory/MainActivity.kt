@@ -4,7 +4,6 @@ import android.animation.ArgbEvaluator
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Color
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -15,7 +14,7 @@ import android.widget.EditText
 import android.widget.RadioGroup
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
@@ -26,10 +25,13 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.squareup.picasso.Picasso
 import com.yadiqian.mymemory.models.BoardSize
+import com.yadiqian.mymemory.models.MatchResult
 import com.yadiqian.mymemory.models.MemoryGame
 import com.yadiqian.mymemory.models.UserImageList
 import com.yadiqian.mymemory.utils.EXTRA_BOARD_SIZE
 import com.yadiqian.mymemory.utils.EXTRA_GAME_INTENT
+import java.util.*
+import kotlin.concurrent.schedule
 
 class MainActivity : AppCompatActivity() {
 
@@ -223,18 +225,29 @@ class MainActivity : AppCompatActivity() {
             Snackbar.make(clRoot, "Invalid move!", Snackbar.LENGTH_SHORT).show()
             return
         }
-        if (memoryGame.flipCard(position)) {
+        val result = memoryGame.flipCard(position)
+        if (result == MatchResult.MATCH) {
             Log.i(TAG, "Found a match! Num pairs found: ${memoryGame.numPairsFound}")
             val color = ArgbEvaluator().evaluate(
-                    memoryGame.numPairsFound.toFloat() / boardSize.getNumPairs(),
-                    ContextCompat.getColor(this, R.color.color_progress_none),
-                    ContextCompat.getColor(this, R.color.color_progress_full)
+                memoryGame.numPairsFound.toFloat() / boardSize.getNumPairs(),
+                ContextCompat.getColor(this, R.color.color_progress_none),
+                ContextCompat.getColor(this, R.color.color_progress_full)
             ) as Int
             tvNumPairs.setTextColor(color)
             tvNumPairs.text = "Pairs: ${memoryGame.numPairsFound} / ${boardSize.getNumPairs()}"
             if (memoryGame.haveWonGame()) {
                 Snackbar.make(clRoot, "You won! Congratulations.", Snackbar.LENGTH_LONG).show()
-                CommonConfetti.rainingConfetti(clRoot, intArrayOf(Color.YELLOW, Color.MAGENTA, Color.GREEN)).oneShot()
+                CommonConfetti.rainingConfetti(
+                    clRoot,
+                    intArrayOf(Color.YELLOW, Color.MAGENTA, Color.GREEN)
+                ).oneShot()
+            }
+        } else if (result == MatchResult.NO_MATCH_TWO) {
+            Timer("timer", false).schedule(800) {
+                memoryGame.flipUnmatchedPair()
+                runOnUiThread {
+                    adapter.notifyDataSetChanged()
+                }
             }
         }
         tvNumMoves.text = "Moves: ${memoryGame.getNumMoves()}"

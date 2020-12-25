@@ -11,6 +11,8 @@ class MemoryGame(
 
     private var numFlips = 0
     private var indexOfSingleSelectedCard: Int? = null
+    private var indexOfCardOne: Int? = null
+    private var indexOfCardTwo: Int? = null
 
     init {
         if (customImages == null) {
@@ -23,38 +25,32 @@ class MemoryGame(
         }
     }
 
-    fun flipCard(position: Int): Boolean {
+    fun flipCard(position: Int): MatchResult {
         numFlips++
         val card = cards[position]
-        var foundMatch = false
+        var result = MatchResult.NO_MATCH_ONE
 
         if (indexOfSingleSelectedCard == null) {
-            restoreCards()
+            flipUnmatchedPair()
             indexOfSingleSelectedCard = position
         } else {
-            foundMatch = checkForMatch(indexOfSingleSelectedCard!!, position)
+            result = checkForMatch(indexOfSingleSelectedCard!!, position)
             indexOfSingleSelectedCard = null
         }
         card.isFaceUp = !card.isFaceUp
-        return foundMatch
+        return result
     }
 
-    private fun checkForMatch(position1: Int, position2: Int): Boolean {
+    private fun checkForMatch(position1: Int, position2: Int): MatchResult {
         if (cards[position1].id == cards[position2].id) {
             cards[position1].isMatched = true
             cards[position2].isMatched = true
             numPairsFound++
-            return true
+            return MatchResult.MATCH
         }
-        return false
-    }
-
-    private fun restoreCards() {
-        for (card in cards) {
-            if (!card.isMatched) {
-                card.isFaceUp = false
-            }
-        }
+        indexOfCardOne = position1
+        indexOfCardTwo = position2
+        return MatchResult.NO_MATCH_TWO
     }
 
     fun isCardFaceUp(position: Int): Boolean {
@@ -67,5 +63,14 @@ class MemoryGame(
 
     fun getNumMoves(): Int {
         return numFlips / 2
+    }
+
+    fun flipUnmatchedPair() {
+        if (indexOfCardOne != null && !cards[indexOfCardOne!!].isMatched) {
+            cards[indexOfCardOne!!].isFaceUp = false
+        }
+        if (indexOfCardTwo != null && !cards[indexOfCardTwo!!].isMatched) {
+            cards[indexOfCardTwo!!].isFaceUp = false
+        }
     }
 }
